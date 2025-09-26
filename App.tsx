@@ -5,8 +5,11 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { PropsWithChildren } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import LoginScreen from './src/screens/auth/LoginScreen';
 import {
   SafeAreaView,
   ScrollView,
@@ -15,15 +18,37 @@ import {
   Text,
   useColorScheme,
   View,
+  Button,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
+
+const Stack = createNativeStackNavigator();
+
+function MainScreen() {
+  const { signOut, user } = useAuth();
+  return (
+    <View style={{ flex: 1, padding: 16, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: 18, marginBottom: 12 }}>Welcome{user?.email ? `, ${user.email}` : ''}!</Text>
+      <Button title="Sign out" onPress={signOut} />
+    </View>
+  );
+}
+
+function Root() {
+  const { user, loading } = useAuth();
+  if (loading) return null; // placeholder for splash
+
+  return (
+    <Stack.Navigator>
+      {!user ? (
+        <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login' }} />
+      ) : (
+        <Stack.Screen name="Main" component={MainScreen} options={{ title: 'GroceryApp' }} />
+      )}
+    </Stack.Navigator>
+  );
+}
 
 type SectionProps = PropsWithChildren<{
   title: string;
@@ -63,36 +88,11 @@ function App(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <AuthProvider>
+      <NavigationContainer>
+        <Root />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
 
